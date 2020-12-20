@@ -1,0 +1,54 @@
+import requests
+import json
+import pandas as pd
+
+
+def getHTMLText(url):
+    header = {
+        'referer': 'https://appgallery.huawei.com/',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36',
+        'Connection': 'keep-alive'
+    }
+    try:
+        r = requests.get(url, timeout=30, headers=header)
+        r.raise_for_status()
+        r.encoding = r.apparent_encoding
+        return r.content
+    except:
+        return ""
+
+
+app_information = {
+    '扫描全能王': 'C10068705',
+    '全能扫描宝': 'C100081001',
+    '全能扫描王免费版': 'C100629457',
+    'GK扫描仪全能王': 'C100224651'
+}
+
+
+def main():
+    depth = 5  # 爬虫页面数量
+    for app_name, app_id in app_information.items():
+        infor_list = []
+        for i in range(depth):
+            url = 'https://web-drcn.hispace.dbankcloud.cn/uowap/index?method=internal.user.commenList3&serviceType=20&reqPageNum=' + str(
+                i) + '&maxResults=25&appid=' + app_id + '&version=10.0.0&zone=&locale=zh_CN'
+            try:
+                html = getHTMLText(url).decode("utf-8")
+                result = json.loads(html)['list']
+                for index in range(len(result)):
+                    author = result[index]['accountName']
+                    version = result[index]['versionName']
+                    rating = result[index]['rating']
+                    vote = result[index]['approveCounts']
+                    comment_content = result[index]['commentInfo']
+                    infor_list.append([author, version, rating, vote, comment_content])
+            except:
+                continue
+        # 把评论数据保存到文件中
+        infor_data = pd.DataFrame(infor_list,
+                                  columns=['author', 'app_version', 'rating', 'vote', 'comment_content'])
+        infor_data.to_csv('/Users/richard/desktop/营销爬虫/华为应用市场评论{}.csv'.format(app_name))
+
+
+main()

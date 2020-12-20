@@ -1,0 +1,45 @@
+# coding=utf-8
+# /usr/bin/env python
+
+"""
+Author: JiangLang
+Email: 1600015801@pku.edu.cn
+Phone: 18800195281
+
+date: 2020-11-25 09:08
+"""
+
+import urllib.request
+import json
+import pandas as pd
+
+app_infor = {
+    '扫描王': '1431498023',
+    '扫描全能宝': '1522815494',
+    'TextScanner': '1452523807',
+    '拍照取字': '1249414505'
+}
+
+for app_name, app_id in app_infor.items():
+    information_list = []
+    page = 1
+    # 默认循环10次
+    while page < 10:
+        comment_url = "https://itunes.apple.com/rss/customerreviews/page="+str(page)+"/id="+str(app_id)+"/sortby=mostrecent/json?l=en&&cc=cn"
+        page += 1
+        response = urllib.request.urlopen(comment_url)
+        comment_information = json.loads(response.read().decode())
+        try:
+            for comment in comment_information['feed']['entry']:
+                author = comment['author']['name']['label']
+                app_version = comment['im:version']['label']
+                rating = comment['im:rating']['label']
+                comment_title = comment['title']['label']
+                comment_content = comment['content']['label']
+                information_list.append([author, app_version, rating, comment_title, comment_content])
+            print('任务完成进度：{:.2f}%'.format(100 * page / 9))
+        except:
+            continue
+    infor_data = pd.DataFrame(information_list,
+                              columns=['author', 'app_version', 'rating', 'comment_title', 'comment_content'])
+    infor_data.to_csv('/Users/richard/desktop/营销爬虫/apple store评论{}.csv'.format(app_name))
